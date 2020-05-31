@@ -39,7 +39,7 @@ export function scheduleRoot(rootFiber) {
     // 说明是第一次渲染
     workInProgressRoot = rootFiber
   }
-  workInProgressRoot.firstEffect = workInProgressRoot.lastEffect= workInProgressRoot.nextEffect=null;
+  workInProgressRoot.firstEffect = workInProgressRoot.lastEffect = workInProgressRoot.nextEffect = null
   nextUnitOfWork = rootFiber
 }
 
@@ -170,15 +170,23 @@ function reconcilerChildren(currentFiber, newChildren) {
     }
 
     if (sameType) {
-      newFiber = {
-        tag: oldFiber.tag, // TAG_HOST
-        type: oldFiber.type, // div
-        props: newChild.props,
-        stateNode: oldFiber.stateNode, // div还没有创建DOM元素
-        return: currentFiber, // 父Fiber, returnFiber
-        alternate: oldFiber,
-        effectTag: UPDATE, // 副作用标识，render阶段我们要收集副作用 增加、删除、更新
-        nextEffect: null,
+      if (oldFiber.alternate) { // 说明至少更新了一次
+        newFiber = oldFiber.alternate  // 如果有上上次的fiber,就拿过来作为这一次的fiber
+        newFiber.props = newChild.props
+        newFiber.alternate = oldFiber
+        newFiber.effectTag = UPDATE
+        newFiber.nextEffect = null
+      } else {
+        newFiber = {
+          tag: oldFiber.tag, // TAG_HOST
+          type: oldFiber.type, // div
+          props: newChild.props,
+          stateNode: oldFiber.stateNode, // div还没有创建DOM元素
+          return: currentFiber, // 父Fiber, returnFiber
+          alternate: oldFiber,
+          effectTag: UPDATE, // 副作用标识，render阶段我们要收集副作用 增加、删除、更新
+          nextEffect: null,
+        }
       }
     } else {
       if (newChild) {
