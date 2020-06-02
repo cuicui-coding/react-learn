@@ -9,6 +9,8 @@ export const TAG_HOST = Symbol.for('TAG_HOST');
 export const TAG_TEXT = Symbol.for('TAG_TEXT');
 // 这是类组件
 export const TAG_CLASS = Symbol.for('TAG_CLASS');
+// 函数组件
+export const TAG__FUNCTION_COMPONENT = Symbol.for('TAG__FUNCTION_COMPONENT')
 
 // 插入节点
 export const PLACEMENT = Symbol.for('PLACEMENT');

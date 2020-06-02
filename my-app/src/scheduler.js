@@ -7,9 +7,10 @@ import {
   PLACEMENT,
   DELETION,
   UPDATE,
+  TAG__FUNCTION_COMPONENT
 } from './constant'
 import { setProps } from './utils'
-import { UpdateQueue } from './UpdateQueue'
+import { UpdateQueue, Update } from './UpdateQueue'
 
 /**
  * 从根节点开始渲染和调度
@@ -25,6 +26,10 @@ let nextUnitOfWork = null //下一个工作单元
 let workInProgressRoot = null // 正在渲染的根rootFiber
 let currentRoot = null //渲染成功之后当前根rootFiber
 let deletions = [] //删除的节点我们并不放在effect list里，所以需要单独记录并执行
+
+let workInProgressFiber = null; // 正在工作中的索引
+let hookIndex = 0; // hooks索引
+
 export function scheduleRoot(rootFiber) {
   // {tag: TAG_ROOT, stateNode: container, props: { children: [element] }}
 
@@ -110,7 +115,6 @@ function completeUnitOfWork(currentFiber) {
  * completeUnitOfWork把下线的钱收完了
  */
 function beginWork(currentFiber) {
-  debugger
   if (currentFiber.tag === TAG_ROOT) { // 根fiber
     updateHostRoot(currentFiber)
   } else if (currentFiber.tag === TAG_TEXT) { // 文本fiber
@@ -119,7 +123,17 @@ function beginWork(currentFiber) {
     updateHost(currentFiber)
   }else if(currentFiber.tag === TAG_CLASS){ // 类组件
     updateClassComponent(currentFiber);
+  }else if(currentFiber.tag === TAG__FUNCTION_COMPONENT){
+    updateFunctionComponent(currentFiber)
   }
+}
+
+function updateFunctionComponent(currentFiber){
+  workInProgressFiber = currentFiber;
+  hookIndex =0;
+  workInProgressFiber.hooks = [];
+  const newChildren = [currentFiber.type(currentFiber.props)];
+  reconcilerChildren(currentFiber, newChildren);
 }
 
 function updateClassComponent(currentFiber){
@@ -159,7 +173,7 @@ function createDOM(currentFiber) {
 }
 
 function updateDOM(stateNode, oldProps, newProps) {
-  if(stateNode.setAttribute) setProps(stateNode, oldProps, newProps)
+  if(stateNode && stateNode.setAttribute) setProps(stateNode, oldProps, newProps)
 }
 
 function updateHostText(currentFiber) {
@@ -193,6 +207,8 @@ function reconcilerChildren(currentFiber, newChildren) {
     let tag
     if(newChild && typeof newChild.type === 'function' && newChild.type.prototype.isReactComponent){
       tag = TAG_CLASS;
+    }else if(newChild && typeof newChild.type === 'function'){
+      tag = TAG__FUNCTION_COMPONENT;
     }else if (newChild && newChild.type === ELEMENT_TEXT) {
       tag = TAG_TEXT // 这是一个文本节点
     } else if (newChild && typeof newChild.type === 'string') {
@@ -307,6 +323,11 @@ function commitWork(currentFiber) {
     // 新增节点
     let nextFiber = currentFiber;
 
+     // 可以防止TAG_CLASS的子组件挂载两次
+     if(nextFiber.tag === TAG_CLASS){
+      return;
+    }
+
     // 如果要挂载的节点不是DOM节点，比如说是类组件Fiber，一直向下找到一个真实DOM节点为止
     while(![ TAG_HOST, TAG_TEXT].includes(nextFiber.tag)){ 
       nextFiber = nextFiber.child;
@@ -339,6 +360,34 @@ function commitDeletion(currentFiber, domReturn){
   }else{
     commitDeletion(currentFiber.child, domReturn)
   }
+}
+/**
+ * hookIndex =0;
+ * workInProgressFiber.hooks = [];
+ */
+export function useReducer(reducer, initialValue){
+  let newHook = workInProgressFiber.alternate?.hooks?.[hookIndex];
+  if(newHook){
+    // 第二次渲染 TODO
+    newHook.state = newHook.updateQueue.forceUpdate(newHook.state)
+  }else{
+    newHook = {
+      state: initialValue,
+      updateQueue: new UpdateQueue() //空的更新队列
+    }
+  }
+  const dispatch = action => { // {type: 'ADD'}
+    let payload = reducer ? reducer(newHook.state, action): action
+    newHook.updateQueue.enqueueUpdate(new Update(payload));
+    scheduleRoot();
+  }
+  workInProgressFiber.hooks[hookIndex++] = newHook;
+  return [newHook.state, dispatch]
+
+}
+
+export function useState(initialValue){
+  return useReducer(null, initialValue)
 }
 
 /**
