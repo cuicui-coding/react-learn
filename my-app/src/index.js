@@ -18,5 +18,5 @@ class ClassCounter extends React.Component {
     )
   }
 }
-
+console.log(<ClassCounter />)
 ReactDOM.render(<ClassCounter />, document.getElementById('root'))
