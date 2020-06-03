@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div
+      id="progress-bar"
+      style="background: lightblue; width: 0; height: 20px;"
+    ></div>
+    <button id="btn">开始</button>
+    <script>
+      //写一下raf的用法，页面上绘制一个进度条 值0% =》100%
+      let btn = document.getElementById('btn')
+      let oDiv = document.getElementById('progress-bar')
+      let start
+      function progress() {
+        oDiv.style.width = oDiv.offsetWidth + 1 + 'px'
+        oDiv.innerHTMl = oDiv.offsetWidth + '%'
+        if (oDiv.offsetWidth < 100) {
+          let current = Date.now()
+          console.log('时间差：', current - start) // 打印的是开始准备执行的时候到真正执行的时间的时间差
+          start = current
+          requestAnimationFrame(progress)
+        }
+      }
+      btn.addEventListener('click', () => {
+        oDiv.style.width = 0 // 先把宽度清除 rAF 后面会用到
+        let current = Date.now() // 先获取到当前的时间 current是毫秒数
+        start = current
+        requestAnimationFrame(progress)
+      })
+    </script>
+  </body>
+</html>
