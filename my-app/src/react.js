@@ -1,4 +1,6 @@
 import { ELEMENT_TEXT } from './constant'
+import { UpdateQueue, Update} from './UpdateQueue'
+import { scheduleRoot } from './scheduler'
 
 /**
  * 创建元素（虚拟DOM）的用法
@@ -28,9 +30,28 @@ function createElement(type, config, ...children) {
     },
   }
 }
+/**
+ * 每个组件有个更新队列UpdateQueue实例，每次调用setState就会创建更新，先放到更新队列，再放到fiber
+ */
+class Component{
+  constructor(props){
+    this.props = props;
+    // this.updateQueue = new UpdateQueue();
+  }
+  setState(payload){ //payload可能是对象或函数
+    let update = new Update(payload);
+    // updateQueue其实放在此类组件对应的fiber节点的internalFiber
+    this.internalFiber.updateQueue.enqueueUpdate(update)
+    // this.updateQueue.enqueueUpdate(update);
+    
+    scheduleRoot(); // 从根节点开始调度
+  }
+}
+Component.prototype.isReactComponent = {}; // 有isReactCompoent属性说明是类组件，而不是函数组件
 
 const React ={
   createElement,
+  Component
 }
 
 export default React;
