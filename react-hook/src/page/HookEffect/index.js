@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
-import HookEffect from './page/HookEffect'
-import HookClick from './page/HookClick'
+import Hook from './Hook'
 export default class App extends Component {
   state = {
     count: 0,
@@ -36,9 +35,8 @@ export default class App extends Component {
     console.log(this.state.count, '父 render')
     return (
       <div>
-        <HookEffect />
-
-        <HookClick />
+        {this.state.count < 2 && <Hook num={this.state.count} />}
+        <button onClick={this.clickHandle}>父组件button</button>
       </div>
     )
   }
